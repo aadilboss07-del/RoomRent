@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoomSplit Ultra</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0c0e14;--surface:#13161f;--surface2:#1a1e2a;--surface3:#222636;
+      --border:#2a2f3f;--border2:#363d52;
+      --text:#e8ecf5;--text2:#8892a8;--text3:#545e74;
+      --accent:#f59e0b;--accent-bg:#f59e0b14;--accent-border:#f59e0b30;
+      --green:#10b981;--red:#f43f5e;--green-bg:#10b98114;--red-bg:#f43f5e14;
+      --blue:#3b82f6;--blue-bg:#3b82f614;
+      --radius:14px;--radius-sm:8px;
+      --shadow:0 4px 24px rgba(0,0,0,0.4);
+    }
+    body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
+    #root{max-width:920px;margin:0 auto;padding:0 16px 80px}
+
+```
+.app-header{padding:28px 0 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--border);margin-bottom:24px}
+.header-left{display:flex;flex-direction:column;gap:4px}
+.app-title{font-size:1.5rem;font-weight:800;letter-spacing:-0.03em;line-height:1.1}
+.app-title span{color:var(--accent)}
+.app-sub{font-size:0.78rem;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em}
+.year-select{background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:600;padding:8px 14px;border-radius:var(--radius-sm);cursor:pointer;outline:none}
+.year-select:focus{border-color:var(--accent)}
+
+.tabs{display:flex;gap:4px;background:var(--surface);padding:5px;border-radius:var(--radius);border:1px solid var(--border);margin-bottom:24px}
+.tab-btn{flex:1;padding:9px 6px;border:none;background:transparent;color:var(--text2);font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:600;border-radius:10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:4px}
+.tab-btn:hover{color:var(--text);background:var(--surface2)}
+.tab-btn.active{background:var(--accent);color:#0c0e14}
+.tab-badge{background:var(--green);color:#fff;border-radius:999px;padding:1px 6px;font-size:0.6rem;font-weight:700;margin-left:2px}
+
+.month-strip-wrap{overflow-x:auto;margin-bottom:20px;scrollbar-width:none}
+.month-strip-wrap::-webkit-scrollbar{display:none}
+.month-strip{display:flex;gap:6px;min-width:max-content;padding-bottom:4px}
+.month-chip{padding:7px 14px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:0.78rem;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all .2s;white-space:nowrap}
+.month-chip:hover{border-color:var(--border2);color:var(--text)}
+.month-chip.active{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent)}
+.month-chip.has-data::after{content:'';display:inline-block;width:5px;height:5px;background:var(--green);border-radius:50%;margin-left:6px;vertical-align:middle}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:0.78rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;display:flex;align-items:center;gap:7px}
+.card-title-icon{width:26px;height:26px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:0.85rem}
+
+.expense-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:520px){.expense-grid{grid-template-columns:1fr}}
+.expense-field{display:flex;flex-direction:column;gap:6px}
+.field-label{font-size:0.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em}
+.field-input{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:500;padding:10px 12px;outline:none;transition:border-color .2s;width:100%}
+.field-input:focus{border-color:var(--accent);background:var(--surface3)}
+.field-input::placeholder{color:var(--text3);font-size:0.85rem}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+@media(max-width:580px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+.stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;flex-direction:column;gap:3px}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:600;color:var(--text)}
+.stat-lbl{font-size:0.68rem;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.08em}
+.stat-box.highlight{background:var(--accent-bg);border-color:var(--accent-border)}
+.stat-box.highlight .stat-val{color:var(--accent)}
+
+.per-head-row{display:grid;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.per-head-item{padding:10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);display:flex;flex-direction:column;gap:3px}
+.per-head-friend{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em}
+.per-head-amt{font-family:'JetBrains Mono',monospace;font-size:0.9rem;font-weight:600;color:var(--text)}
+.per-head-adv{font-size:0.63rem;color:var(--green);font-weight:600}
+
+.payments-grid{display:grid;gap:12px}
+.payment-card{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 12px;display:flex;flex-direction:column;gap:8px}
+.friend-name{font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em}
+.payment-input{background:var(--surface3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:0.9rem;font-weight:500;padding:8px 10px;outline:none;transition:border-color .2s;width:100%}
+.payment-input:focus{border-color:var(--accent)}
+.payment-input::placeholder{color:var(--text3);font-size:0.8rem}
+.balance-badge{font-size:0.72rem;font-family:'JetBrains Mono',monospace;font-weight:600;padding:3px 8px;border-radius:999px;text-align:center}
+.balance-pos{background:var(--green-bg);color:var(--green)}
+.balance-neg{background:var(--red-bg);color:var(--red)}
+.balance-zero{background:var(--surface3);color:var(--text3)}
+.pool-badge{font-family:'JetBrains Mono',monospace;font-size:0.63rem;font-weight:600;padding:2px 8px;border-radius:999px;text-align:center;background:var(--blue-bg);color:var(--blue)}
+
+.clear-btn{background:transparent;border:1px solid var(--border2);color:var(--text3);font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:600;padding:5px 12px;border-radius:999px;cursor:pointer;transition:all .2s}
+.clear-btn:hover{border-color:var(--red);color:var(--red)}
+
+.month-section-title{font-size:1.2rem;font-weight:800;color:var(--text);letter-spacing:-0.02em;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.month-section-title span{font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:500;color:var(--text3)}
+
+/* SUMMARY */
+.summary-total-card{background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--radius);padding:22px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.total-amount{font-family:'JetBrains Mono',monospace;font-size:2.2rem;font-weight:600;color:var(--accent);line-height:1}
+.total-label{font-size:0.8rem;color:var(--text2);font-weight:600;margin-top:5px}
+.friend-summary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:480px){.friend-summary-grid{grid-template-columns:1fr}}
+.friend-sum-card{border-radius:var(--radius-sm);padding:16px;border:1.5px solid;display:flex;align-items:center;gap:14px}
+.friend-sum-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;flex-shrink:0}
+.friend-sum-info{flex:1;min-width:0}
+.friend-sum-name{font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em}
+.friend-sum-row{display:flex;justify-content:space-between;align-items:center;margin-top:6px;gap:8px}
+.friend-sum-paid{font-family:'JetBrains Mono',monospace;font-size:0.95rem;font-weight:600;color:var(--text)}
+.due-pos{font-family:'JetBrains Mono',monospace;font-size:0.78rem;font-weight:600;color:var(--green)}
+.due-neg{font-family:'JetBrains Mono',monospace;font-size:0.78rem;font-weight:600;color:var(--red)}
+.month-table{width:100%;border-collapse:separate;border-spacing:0 6px}
+.month-table th{font-size:0.68rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;padding:6px 12px;text-align:left}
+.month-table th:not(:first-child){text-align:right}
+.month-table td{padding:10px 12px;font-size:0.85rem;font-family:'JetBrains Mono',monospace;font-weight:500;background:var(--surface2);color:var(--text)}
+.month-table td:first-child{border-radius:8px 0 0 8px;color:var(--text2);font-family:'Syne',sans-serif;font-weight:600;font-size:0.8rem}
+.month-table td:last-child{border-radius:0 8px 8px 0}
+.month-table td:not(:first-child){text-align:right}
+.month-table tr.empty-row td{opacity:.35}
+
+/* ADVANCES */
+.adv-log-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.adv-entry-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.adv-entry-row:hover{border-color:var(--border2)}
+.adv-entry-date{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--text3);min-width:92px;flex-shrink:0}
+.adv-entry-amt{font-family:'JetBrains Mono',monospace;font-size:0.95rem;font-weight:600;color:var(--green);min-width:80px;flex-shrink:0}
+.adv-entry-note{flex:1;font-size:0.78rem;color:var(--text2);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adv-entry-del{background:transparent;border:none;color:var(--text3);cursor:pointer;padding:4px 6px;border-radius:6px;font-size:0.8rem;transition:all .15s;flex-shrink:0}
+.adv-entry-del:hover{background:var(--red-bg);color:var(--red)}
+.adv-empty{font-size:0.78rem;color:var(--text3);padding:10px 14px;background:var(--surface2);border-radius:var(--radius-sm);border:1px dashed var(--border2);text-align:center;margin-bottom:10px}
+.add-adv-form{background:var(--surface2);border:1.5px dashed var(--accent-border);border-radius:var(--radius-sm);padding:14px;display:flex;flex-direction:column;gap:10px}
+.add-adv-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.add-adv-row{grid-template-columns:1fr}}
+.adv-input{background:var(--surface3);border:1.5px solid var(--border2);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:0.88rem;font-weight:500;padding:8px 10px;outline:none;width:100%;transition:border-color .2s}
+.adv-input:focus{border-color:var(--accent)}
+.adv-input::placeholder{color:var(--text3);font-size:0.8rem}
+.adv-note-input{background:var(--surface3);border:1.5px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Syne',sans-serif;font-size:0.85rem;padding:8px 10px;outline:none;width:100%;transition:border-color .2s}
+.adv-note-input:focus{border-color:var(--accent)}
+.adv-note-input::placeholder{color:var(--text3)}
+.adv-form-btns{display:flex;gap:8px;justify-content:flex-end}
+.adv-save-btn{background:var(--accent);border:none;color:#0c0e14;font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:700;padding:8px 20px;border-radius:6px;cursor:pointer}
+.adv-save-btn:disabled{opacity:.4;cursor:not-allowed}
+.adv-cancel-btn{background:var(--surface3);border:none;color:var(--text2);font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:600;padding:8px 14px;border-radius:6px;cursor:pointer}
+.add-adv-trigger{display:flex;align-items:center;gap:6px;background:transparent;border:1px dashed var(--border2);color:var(--text3);font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:600;padding:7px 14px;border-radius:6px;cursor:pointer;transition:all .2s}
+.add-adv-trigger:hover{border-color:var(--accent-border);color:var(--accent)}
+
+/* MEMBERS */
+.friend-row{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;transition:border-color .2s}
+.friend-row:hover{border-color:var(--border2)}
+.color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.friend-row-name{flex:1;font-size:0.92rem;font-weight:700}
+.friend-edit-input{flex:1;background:var(--surface3);border:1.5px solid var(--accent-border);border-radius:6px;color:var(--text);font-family:'Syne',sans-serif;font-size:0.88rem;font-weight:600;padding:5px 10px;outline:none}
+.friend-edit-input:focus{border-color:var(--accent)}
+.row-actions{display:flex;gap:4px;align-items:center;flex-shrink:0}
+.icon-btn{background:transparent;border:none;cursor:pointer;padding:5px 7px;border-radius:6px;transition:background .2s;font-size:0.85rem;line-height:1}
+.icon-btn:hover{background:var(--surface3)}
+.icon-btn.danger:hover{background:var(--red-bg)}
+.save-btn{background:var(--accent);border:none;color:#0c0e14;font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:700;padding:5px 12px;border-radius:6px;cursor:pointer}
+.cancel-btn{background:var(--surface3);border:none;color:var(--text2);font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer}
+.add-friend-btn{display:flex;align-items:center;gap:8px;background:var(--accent-bg);border:1.5px dashed var(--accent-border);color:var(--accent);font-family:'Syne',sans-serif;font-size:0.82rem;font-weight:700;padding:13px 16px;border-radius:var(--radius-sm);cursor:pointer;transition:all .2s;width:100%;justify-content:center;margin-top:8px}
+.add-friend-btn:hover{background:var(--accent);color:#0c0e14;border-style:solid}
+.add-friend-form{display:flex;gap:8px;margin-top:10px}
+.add-friend-input{flex:1;background:var(--surface2);border:1.5px solid var(--accent-border);border-radius:var(--radius-sm);color:var(--text);font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:600;padding:10px 14px;outline:none}
+.add-friend-input:focus{border-color:var(--accent)}
+.add-friend-input::placeholder{color:var(--text3);font-weight:400}
+.confirm-add-btn{background:var(--accent);border:none;color:#0c0e14;font-family:'Syne',sans-serif;font-size:0.85rem;font-weight:700;padding:10px 20px;border-radius:var(--radius-sm);cursor:pointer;white-space:nowrap}
+.confirm-add-btn:disabled{opacity:.4;cursor:not-allowed}
+
+.info-pill{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:999px;padding:3px 10px;font-size:0.7rem;font-family:'JetBrains Mono',monospace;color:var(--text3)}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.section-label{font-size:0.68rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:24px;width:100%;max-width:360px;box-shadow:var(--shadow)}
+.modal-title{font-size:1rem;font-weight:800;color:var(--text);margin-bottom:8px}
+.modal-sub{font-size:0.78rem;color:var(--text3);margin-bottom:20px;line-height:1.6}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+.modal-cancel-btn{background:var(--surface2);border:1px solid var(--border2);color:var(--text2);font-family:'Syne',sans-serif;font-size:0.82rem;font-weight:600;padding:9px 18px;border-radius:var(--radius-sm);cursor:pointer}
+.modal-danger-btn{background:var(--red);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:0.82rem;font-weight:700;padding:9px 18px;border-radius:var(--radius-sm);cursor:pointer}
+
+/* NOTIFICATION */
+.notif{position:fixed;bottom:24px;right:24px;z-index:999;padding:12px 20px;border-radius:var(--radius-sm);font-size:0.82rem;font-weight:600;animation:notifIn .3s ease;max-width:300px;box-shadow:var(--shadow)}
+.notif-success{background:var(--green);color:#fff}
+.notif-error{background:var(--red);color:#fff}
+@keyframes notifIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+```
+
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useRef, useCallback, useMemo } = React;
+
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const CURRENT_YEAR = new Date().getFullYear();
+const TODAY = new Date().toISOString().split("T")[0];
+
+const ALL_COLORS = [
+  {color:"#f97316",bg:"#f9731618",border:"#f9731640"},
+  {color:"#3b82f6",bg:"#3b82f618",border:"#3b82f640"},
+  {color:"#10b981",bg:"#10b98118",border:"#10b98140"},
+  {color:"#a855f7",bg:"#a855f718",border:"#a855f740"},
+  {color:"#ec4899",bg:"#ec489918",border:"#ec489940"},
+  {color:"#14b8a6",bg:"#14b8a618",border:"#14b8a640"},
+  {color:"#eab308",bg:"#eab30818",border:"#eab30840"},
+  {color:"#6366f1",bg:"#6366f118",border:"#6366f140"},
+];
+
+const DEFAULT_FRIENDS = ["Rizwan","Aadil","Naveen","Shabab"];
+const makeId = () => Math.random().toString(36).slice(2,9);
+
+const emptyMonth = (friends) => ({
+  roomRent:"", electricity:"", other:"",
+  payments: friends.reduce((a,f)=>{a[f]="";return a},{}),
+});
+const emptyYear = (friends) => {
+  const o={};
+  MONTHS.forEach(m => o[m]=emptyMonth(friends));
+  return o;
+};
+
+// Load / save localStorage
+const loadLS = (key, fallback) => {
+  try { const v=localStorage.getItem(key); return v?JSON.parse(v):fallback; } catch{return fallback;}
+};
+const saveLS = (key, val) => {
+  try{localStorage.setItem(key, JSON.stringify(val));}catch{}
+};
+
+// Build advance-usage map: for each friend × month, how much advance is consumed
+function buildAdvanceMap(advanceLog, friends, year, yearData) {
+  const map = {};
+  friends.forEach(friend => {
+    let pool = 0;
+    const entries = advanceLog
+      .filter(e => e.friend===friend)
+      .sort((a,b)=>a.date.localeCompare(b.date))
+      .map(e=>({...e}));
+    map[friend] = {};
+    for(let i=0;i<12;i++){
+      const monthName = MONTHS[i];
+      const yr = parseInt(year);
+      entries.forEach(e=>{
+        if(!e._done){
+          const d=new Date(e.date);
+          if(d.getFullYear()<yr||(d.getFullYear()===yr&&d.getMonth()<=i)){
+            e._done=true;
+            pool+=e.amount;
+          }
+        }
+      });
+      const md = yearData[monthName]||{};
+      const total=(parseFloat(md.roomRent)||0)+(parseFloat(md.electricity)||0)+(parseFloat(md.other)||0);
+      const n=friends.length;
+      const base = total>0&&n>0?total/n:0;
+      const used = Math.min(pool,base);
+      map[friend][monthName]={used,poolBefore:pool,poolAfter:pool-used};
+      pool-=used;
+    }
+  });
+  return map;
+}
+
+function App() {
+  const [friends, setFriends]       = useState(()=>loadLS("rs_friends", DEFAULT_FRIENDS));
+  const [data, setData]             = useState(()=>loadLS("rs_data", {}));
+  const [advanceLog, setAdvanceLog] = useState(()=>loadLS("rs_advances", []));
+  const [selectedYear, setSelectedYear] = useState(String(CURRENT_YEAR));
+  const [activeTab, setActiveTab]   = useState("entry");
+  const [activeMonth, setActiveMonth] = useState(new Date().getMonth());
+  const [notif, setNotif]           = useState(null);
+  // member editing
+  const [editingFriend, setEditingFriend] = useState(null);
+  const [showAddForm, setShowAddForm]     = useState(false);
+  const [newFriendName, setNewFriendName] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  // advance form per friend
+  const [advForm, setAdvForm] = useState({});
+  const notifTimer = useRef();
+
+  const gc = idx => ALL_COLORS[idx%ALL_COLORS.length];
+
+  // persist on every change
+  const setFriendsP = v => { setFriends(v); saveLS("rs_friends",v); };
+  const setDataP    = fn => setData(prev=>{ const next=typeof fn==="function"?fn(prev):fn; saveLS("rs_data",next); return next; });
+  const setAdvLP    = fn => setAdvanceLog(prev=>{ const next=typeof fn==="function"?fn(prev):fn; saveLS("rs_advances",next); return next; });
+
+  const years = [...new Set([String(CURRENT_YEAR-1),String(CURRENT_YEAR),String(CURRENT_YEAR+1),...Object.keys(data)])].sort();
+  const yearData = data[selectedYear]||emptyYear(friends);
+
+  const showNotif = (msg,type="success") => {
+    setNotif({msg,type});
+    clearTimeout(notifTimer.current);
+    notifTimer.current=setTimeout(()=>setNotif(null),3200);
+  };
+
+  const advanceMap = useMemo(
+    ()=>buildAdvanceMap(advanceLog,friends,selectedYear,yearData),
+    [advanceLog,friends,selectedYear,yearData]
+  );
+
+  const advancePoolRemaining = useMemo(()=>{
+    const r={};
+    friends.forEach(f=>{
+      const total=advanceLog.filter(e=>e.friend===f).reduce((s,e)=>s+e.amount,0);
+      const used=Object.values(advanceMap[f]||{}).reduce((s,v)=>s+v.used,0);
+      r[f]=total-used;
+    });
+    return r;
+  },[advanceLog,friends,advanceMap]);
+
+  // ── STATS ──
+  const getMonthStats = useCallback(month=>{
+    const md=yearData[month]||emptyMonth(friends);
+    const total=(parseFloat(md.roomRent)||0)+(parseFloat(md.electricity)||0)+(parseFloat(md.other)||0);
+    const n=friends.length;
+    const base=total>0&&n>0?total/n:0;
+    const advUsed={}, adjPH={};
+    friends.forEach(f=>{
+      const u=advanceMap[f]?.[month]?.used||0;
+      advUsed[f]=u; adjPH[f]=Math.max(0,base-u);
+    });
+    const totalPaid=friends.reduce((s,f)=>s+(parseFloat(md.payments?.[f])||0),0);
+    const balances={};
+    friends.forEach(f=>{balances[f]=(parseFloat(md.payments?.[f])||0)-adjPH[f];});
+    return{total,base,adjPH,advUsed,totalPaid,balances,hasData:total>0||totalPaid>0};
+  },[yearData,advanceMap,friends]);
+
+  const getYearSummary = useCallback(()=>{
+    let gTotal=0,gPaid=0;
+    const fTotals={},fDues={},rows=[];
+    friends.forEach(f=>{fTotals[f]=0;fDues[f]=0;});
+    MONTHS.forEach(m=>{
+      const s=getMonthStats(m);
+      gTotal+=s.total; gPaid+=s.totalPaid;
+      friends.forEach(f=>{fTotals[f]+=(parseFloat(yearData[m]?.payments?.[f])||0);fDues[f]+=s.balances[f];});
+      rows.push({month:m,...s});
+    });
+    return{gTotal,gPaid,fTotals,fDues,rows};
+  },[getMonthStats,yearData,friends]);
+
+  const stats     = getMonthStats(MONTHS[activeMonth]);
+  const ys        = getYearSummary();
+  const amData    = yearData[MONTHS[activeMonth]]||emptyMonth(friends);
+
+  const fmt = n => n===0?"—":"₹"+Math.abs(n).toLocaleString("en-IN",{maximumFractionDigits:0});
+  const fmtDate = d => { const dt=new Date(d); return `${dt.getDate()} ${MONTHS_SHORT[dt.getMonth()]} ${dt.getFullYear()}`; };
+  const gcols = n => n<=2?"repeat(2,1fr)":n<=4?"repeat(4,1fr)":n<=6?"repeat(3,1fr)":"repeat(4,1fr)";
+
+  // ── DATA UPDATES ──
+  const updateField = (month,field,val) => setDataP(d=>({
+    ...d,[selectedYear]:{...(d[selectedYear]||emptyYear(friends)),
+      [month]:{...(d[selectedYear]?.[month]||emptyMonth(friends)),[field]:val}}
+  }));
+  const updatePayment = (month,friend,val) => setDataP(d=>{
+    const yd=d[selectedYear]||emptyYear(friends);
+    return{...d,[selectedYear]:{...yd,[month]:{...yd[month],payments:{...yd[month]?.payments,[friend]:val}}}};
+  });
+  const clearMonth = () => {
+    setDataP(d=>({...d,[selectedYear]:{...(d[selectedYear]||emptyYear(friends)),[MONTHS[activeMonth]]:emptyMonth(friends)}}));
+    showNotif("Month cleared");
+  };
+
+  // ── ADVANCE OPS ──
+  const openAdvForm = f => setAdvForm(p=>({...p,[f]:{open:true,date:TODAY,amount:"",note:""}}));
+  const closeAdvForm = f => setAdvForm(p=>({...p,[f]:{...p[f],open:false}}));
+  const saveAdv = f => {
+    const form=advForm[f]||{};
+    if(!form.amount||isNaN(parseFloat(form.amount))||parseFloat(form.amount)<=0){showNotif("Amount sahi daalo!","error");return;}
+    if(!form.date){showNotif("Date zaroori hai!","error");return;}
+    const e={id:makeId(),friend:f,date:form.date,amount:parseFloat(form.amount),note:form.note.trim()};
+    setAdvLP(p=>[...p,e].sort((a,b)=>a.date.localeCompare(b.date)));
+    closeAdvForm(f);
+    showNotif(`₹${e.amount.toLocaleString("en-IN")} advance saved for ${f} ✅`);
+  };
+  const deleteAdv = id => { setAdvLP(p=>p.filter(e=>e.id!==id)); showNotif("Entry deleted"); };
+
+  // ── MEMBER OPS ──
+  const addFriend = () => {
+    const name=newFriendName.trim();
+    if(!name)return;
+    if(friends.includes(name)){showNotif("Naam already hai!","error");return;}
+    const nf=[...friends,name];
+    setFriendsP(nf);
+    setDataP(d=>{
+      const upd={};
+      Object.keys(d).forEach(yr=>{upd[yr]={};
+        MONTHS.forEach(m=>upd[yr][m]={...(d[yr][m]||emptyMonth(friends)),payments:{...(d[yr][m]?.payments||{}),[name]:""}});
+      });
+      return upd;
+    });
+    setNewFriendName(""); setShowAddForm(false);
+    showNotif(`${name} add ho gaya! 🎉`);
+  };
+  const saveEdit = () => {
+    if(!editingFriend)return;
+    const{index,value}=editingFriend;
+    const newName=value.trim(), oldName=friends[index];
+    if(!newName||newName===oldName){setEditingFriend(null);return;}
+    if(friends.includes(newName)){showNotif("Naam already hai!","error");return;}
+    const nf=[...friends]; nf[index]=newName; setFriendsP(nf);
+    setDataP(d=>{
+      const upd={};
+      Object.keys(d).forEach(yr=>{upd[yr]={};
+        MONTHS.forEach(m=>{
+          const mo=d[yr][m]||emptyMonth(friends);
+          const np={};Object.keys(mo.payments).forEach(k=>{np[k===oldName?newName:k]=mo.payments[k];});
+          upd[yr][m]={...mo,payments:np};
+        });
+      });
+      return upd;
+    });
+    setAdvLP(p=>p.map(e=>e.friend===oldName?{...e,friend:newName}:e));
+    setEditingFriend(null);
+    showNotif(`"${oldName}" → "${newName}" ✅`);
+  };
+  const deleteFriend = () => {
+    const name=deleteConfirm;
+    if(friends.length<=2){showNotif("Min 2 log chahiye!","error");setDeleteConfirm(null);return;}
+    setFriendsP(friends.filter(f=>f!==name));
+    setDataP(d=>{
+      const upd={};
+      Object.keys(d).forEach(yr=>{upd[yr]={};
+        MONTHS.forEach(m=>{const mo=d[yr][m]||emptyMonth(friends);const np={...mo.payments};delete np[name];upd[yr][m]={...mo,payments:np};});
+      });
+      return upd;
+    });
+    setAdvLP(p=>p.filter(e=>e.friend!==name));
+    setDeleteConfirm(null); showNotif(`${name} removed`);
+  };
+
+  return (
+    <div>
+      {/* HEADER */}
+      <header className="app-header">
+        <div className="header-left">
+          <div className="app-title">Room<span>Split</span> <span style={{fontSize:"1rem",color:"var(--text3)"}}>Ultra</span></div>
+          <div className="app-sub">{friends.length} ROOMMATES · EXPENSE TRACKER</div>
+        </div>
+        <select className="year-select" value={selectedYear} onChange={e=>setSelectedYear(e.target.value)}>
+          {years.map(y=><option key={y} value={y}>{y}</option>)}
+        </select>
+      </header>
+
+      {/* TABS */}
+      <div className="tabs">
+        {[["entry","📝","Entry"],["summary","📊","Summary"],["advances","💳","Advances"],["members","👥","Members"]].map(([id,icon,label])=>(
+          <button key={id} className={`tab-btn ${activeTab===id?"active":""}`} onClick={()=>setActiveTab(id)}>
+            <span>{icon}</span>{label}
+            {id==="advances"&&advanceLog.length>0&&<span className="tab-badge">{advanceLog.length}</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* ── ENTRY TAB ── */}
+      {activeTab==="entry"&&(
+        <>
+          <div className="month-strip-wrap">
+            <div className="month-strip">
+              {MONTHS_SHORT.map((m,i)=>{
+                const ms=getMonthStats(MONTHS[i]);
+                return <button key={m} className={`month-chip${activeMonth===i?" active":""}${ms.hasData?" has-data":""}`} onClick={()=>setActiveMonth(i)}>{m}</button>;
+              })}
+            </div>
+          </div>
+
+          <div className="month-section-title">{MONTHS[activeMonth]} <span>{selectedYear}</span></div>
+
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title"><div className="card-title-icon">🏠</div>Expenses</div>
+              <button className="clear-btn" onClick={clearMonth}>Clear Month</button>
+            </div>
+            <div className="expense-grid">
+              {[["roomRent","Room Rent","e.g. 24000"],["electricity","Electricity","e.g. 1800"],["other","Other","e.g. 500"]].map(([key,lbl,ph])=>(
+                <div className="expense-field" key={key}>
+                  <label className="field-label">{lbl}</label>
+                  <input className="field-input" type="number" placeholder={ph} value={amData[key]||""} onChange={e=>updateField(MONTHS[activeMonth],key,e.target.value)}/>
+                </div>
+              ))}
+            </div>
+            <div className="stats-row">
+              <div className="stat-box highlight"><div className="stat-val">{fmt(stats.total)}</div><div className="stat-lbl">Total</div></div>
+              <div className="stat-box"><div className="stat-val">{fmt(stats.base)}</div><div className="stat-lbl">Base /Head</div></div>
+              <div className="stat-box"><div className="stat-val">{fmt(stats.totalPaid)}</div><div className="stat-lbl">Paid</div></div>
+              <div className="stat-box">
+                <div className="stat-val" style={{color:stats.total-stats.totalPaid<=0?"var(--green)":"var(--red)"}}>{fmt(Math.abs(stats.total-stats.totalPaid))}</div>
+                <div className="stat-lbl">{stats.total-stats.totalPaid<=0?"Surplus":"Remaining"}</div>
+              </div>
+            </div>
+            {stats.total>0&&(
+              <div className="per-head-row" style={{gridTemplateColumns:gcols(friends.length)}}>
+                {friends.map((f,idx)=>{
+                  const c=gc(idx); const used=stats.advUsed[f]||0;
+                  return (
+                    <div className="per-head-item" key={f} style={{borderColor:c.border,background:c.bg}}>
+                      <div className="per-head-friend" style={{color:c.color}}>{f}</div>
+                      <div className="per-head-amt">{fmt(stats.adjPH[f])}</div>
+                      {used>0&&<div className="per-head-adv">✓ Adv: ₹{used.toLocaleString("en-IN")}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title"><div className="card-title-icon">💳</div>Payments Made</div>
+            </div>
+            <div className="payments-grid" style={{gridTemplateColumns:gcols(friends.length)}}>
+              {friends.map((f,idx)=>{
+                const c=gc(idx);
+                const bal=stats.balances[f];
+                const bClass=bal>0.5?"balance-pos":bal<-0.5?"balance-neg":"balance-zero";
+                const bText=bal>0.5?`+${fmt(bal)}`:bal<-0.5?`-${fmt(bal)}`:"Even";
+                const pool=advancePoolRemaining[f]||0;
+                return (
+                  <div className="payment-card" key={f} style={{borderColor:c.border,background:c.bg}}>
+                    <div className="friend-name" style={{color:c.color}}>{f}</div>
+                    <input className="payment-input" type="number" placeholder="₹ Paid" value={amData.payments?.[f]??""} onChange={e=>updatePayment(MONTHS[activeMonth],f,e.target.value)}/>
+                    <div className={`balance-badge ${bClass}`}>{stats.total>0?bText:"—"}</div>
+                    {pool>0&&<div className="pool-badge">Pool: ₹{pool.toLocaleString("en-IN")} left</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── SUMMARY TAB ── */}
+      {activeTab==="summary"&&(
+        <>
+          <div className="summary-total-card">
+            <div>
+              <div className="total-amount">₹{ys.gTotal.toLocaleString("en-IN",{maximumFractionDigits:0})}</div>
+              <div className="total-label">Total Expenses · {selectedYear}</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"1.3rem",fontWeight:600,color:"var(--text)"}}>₹{ys.gPaid.toLocaleString("en-IN",{maximumFractionDigits:0})}</div>
+              <div className="total-label">Total Collected</div>
+            </div>
+          </div>
+
+          <div className="friend-summary-grid">
+            {friends.map((f,idx)=>{
+              const c=gc(idx);
+              const totalAdv=advanceLog.filter(e=>e.friend===f).reduce((s,e)=>s+e.amount,0);
+              return (
+                <div className="friend-sum-card" key={f} style={{background:c.bg,borderColor:c.border}}>
+                  <div className="friend-sum-icon" style={{background:c.color+"22",color:c.color}}>{f[0]}</div>
+                  <div className="friend-sum-info">
+                    <div className="friend-sum-name" style={{color:c.color}}>{f}</div>
+                    <div className="friend-sum-row">
+                      <div>
+                        <div style={{fontSize:"0.62rem",color:"var(--text3)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:2}}>Paid</div>
+                        <div className="friend-sum-paid">₹{ys.fTotals[f].toLocaleString("en-IN",{maximumFractionDigits:0})}</div>
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <div style={{fontSize:"0.62rem",color:"var(--text3)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:2}}>Balance</div>
+                        <div className={ys.fDues[f]>=-0.5?"due-pos":"due-neg"}>
+                          {Math.abs(ys.fDues[f])<0.5?"Even":ys.fDues[f]>0?`+₹${ys.fDues[f].toLocaleString("en-IN",{maximumFractionDigits:0})}`:"-₹"+Math.abs(ys.fDues[f]).toLocaleString("en-IN",{maximumFractionDigits:0})}
+                        </div>
+                      </div>
+                    </div>
+                    {totalAdv>0&&<div style={{marginTop:5,fontSize:"0.62rem",color:"var(--green)",fontFamily:"'JetBrains Mono',monospace",fontWeight:600}}>💰 Advance: ₹{totalAdv.toLocaleString("en-IN")}</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="card" style={{overflowX:"auto"}}>
+            <div className="card-header">
+              <div className="card-title"><div className="card-title-icon">📅</div>Month-wise Breakdown</div>
+            </div>
+            <table className="month-table">
+              <thead>
+                <tr><th>Month</th><th>Total</th>{friends.map(f=><th key={f}>{f.slice(0,3)}</th>)}<th>Bal</th></tr>
+              </thead>
+              <tbody>
+                {ys.rows.map(({month,total,totalPaid,hasData})=>(
+                  <tr key={month} className={!hasData?"empty-row":""}>
+                    <td>{month.slice(0,3)}</td>
+                    <td>{total>0?`₹${total.toLocaleString("en-IN",{maximumFractionDigits:0})}`:"—"}</td>
+                    {friends.map(f=>{
+                      const paid=parseFloat(yearData[month]?.payments?.[f])||0;
+                      const advU=advanceMap[f]?.[month]?.used||0;
+                      return <td key={f} style={{color:paid>0||advU>0?"var(--text)":"var(--text3)"}}>
+                        {paid>0?`₹${paid.toLocaleString("en-IN",{maximumFractionDigits:0})}`:advU>0?<span style={{color:"var(--green)",fontSize:"0.75rem"}}>adv</span>:"—"}
+                      </td>;
+                    })}
+                    <td style={{color:total===0?"var(--text3)":totalPaid>=total?"var(--green)":"var(--red)"}}>
+                      {total>0?(totalPaid>=total?`+₹${(totalPaid-total).toLocaleString("en-IN",{maximumFractionDigits:0})}`:"-₹"+(total-totalPaid).toLocaleString("en-IN",{maximumFractionDigits:0})):"—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* ── ADVANCES TAB ── */}
+      {activeTab==="advances"&&(
+        <>
+          {/* Pool summary */}
+          <div className="card" style={{marginBottom:16}}>
+            <div className="card-header" style={{marginBottom:10}}>
+              <div className="card-title"><div className="card-title-icon">💰</div>Advance Pool Summary</div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:gcols(friends.length),gap:10}}>
+              {friends.map((f,idx)=>{
+                const c=gc(idx);
+                const total=advanceLog.filter(e=>e.friend===f).reduce((s,e)=>s+e.amount,0);
+                const used=Object.values(advanceMap[f]||{}).reduce((s,v)=>s+v.used,0);
+                const rem=total-used;
+                return (
+                  <div key={f} style={{background:c.bg,border:`1.5px solid ${c.border}`,borderRadius:10,padding:"12px 14px"}}>
+                    <div style={{fontSize:"0.72rem",fontWeight:700,color:c.color,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>{f}</div>
+                    <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"1rem",fontWeight:600,color:"var(--text)"}}>₹{total.toLocaleString("en-IN")}</div>
+                    <div style={{fontSize:"0.65rem",color:"var(--text3)",marginTop:3}}>Total given</div>
+                    {used>0&&<div style={{fontSize:"0.68rem",color:"var(--green)",fontFamily:"'JetBrains Mono',monospace",fontWeight:600,marginTop:4}}>✓ Used: ₹{used.toLocaleString("en-IN")}</div>}
+                    {rem>0&&<div style={{fontSize:"0.68rem",color:"var(--accent)",fontFamily:"'JetBrains Mono',monospace",fontWeight:600,marginTop:2}}>⏳ Left: ₹{rem.toLocaleString("en-IN")}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Per-friend log */}
+          {friends.map((f,idx)=>{
+            const c=gc(idx);
+            const entries=advanceLog.filter(e=>e.friend===f).sort((a,b)=>a.date.localeCompare(b.date));
+            const form=advForm[f]||{};
+            const total=entries.reduce((s,e)=>s+e.amount,0);
+            const rem=advancePoolRemaining[f]||0;
+            return (
+              <div className="card" key={f}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{width:36,height:36,borderRadius:"50%",background:c.color+"22",color:c.color,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:"1rem",flexShrink:0}}>{f[0]}</div>
+                    <div>
+                      <div style={{fontWeight:800,fontSize:"0.92rem",color:c.color}}>{f}</div>
+                      <div style={{fontSize:"0.68rem",color:"var(--text3)",fontFamily:"'JetBrains Mono',monospace",marginTop:1}}>
+                        {entries.length} entr{entries.length===1?"y":"ies"} · Total: ₹{total.toLocaleString("en-IN")}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                    {rem>0&&<div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.75rem",fontWeight:700,padding:"4px 12px",borderRadius:999,background:"var(--green-bg)",color:"var(--green)",border:"1px solid #10b98130"}}>⏳ ₹{rem.toLocaleString("en-IN")} pending</div>}
+                    {!form.open&&<button className="add-adv-trigger" onClick={()=>openAdvForm(f)}>＋ Advance Add</button>}
+                  </div>
+                </div>
+
+                {entries.length===0&&!form.open
+                  ?<div className="adv-empty">Koi advance entry nahi hai</div>
+                  :<div className="adv-log-list">
+                    {entries.map(e=>(
+                      <div className="adv-entry-row" key={e.id}>
+                        <div className="adv-entry-date">📅 {fmtDate(e.date)}</div>
+                        <div className="adv-entry-amt">+₹{e.amount.toLocaleString("en-IN")}</div>
+                        <div className="adv-entry-note">{e.note||<span style={{color:"var(--text3)",fontStyle:"normal",opacity:.5}}>No note</span>}</div>
+                        <button className="adv-entry-del" onClick={()=>deleteAdv(e.id)}>🗑</button>
+                      </div>
+                    ))}
+                  </div>
+                }
+
+                {form.open&&(
+                  <div className="add-adv-form">
+                    <div style={{fontSize:"0.72rem",fontWeight:700,color:"var(--accent)",textTransform:"uppercase",letterSpacing:"0.08em"}}>Naya Advance Entry</div>
+                    <div className="add-adv-row">
+                      <div>
+                        <div className="field-label" style={{marginBottom:5}}>Date</div>
+                        <input type="date" className="adv-input" value={form.date||TODAY} max={TODAY}
+                          onChange={e=>setAdvForm(p=>({...p,[f]:{...p[f],date:e.target.value}}))}/>
+                      </div>
+                      <div>
+                        <div className="field-label" style={{marginBottom:5}}>Amount (₹)</div>
+                        <input type="number" className="adv-input" placeholder="e.g. 2000" value={form.amount||""}
+                          onChange={e=>setAdvForm(p=>({...p,[f]:{...p[f],amount:e.target.value}}))}/>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="field-label" style={{marginBottom:5}}>Note (optional)</div>
+                      <input type="text" className="adv-note-input" placeholder="e.g. March ka advance, February me diya tha..."
+                        value={form.note||""}
+                        onChange={e=>setAdvForm(p=>({...p,[f]:{...p[f],note:e.target.value}}))}
+                        onKeyDown={e=>{if(e.key==="Enter")saveAdv(f);if(e.key==="Escape")closeAdvForm(f);}}/>
+                    </div>
+                    <div className="adv-form-btns">
+                      <button className="adv-cancel-btn" onClick={()=>closeAdvForm(f)}>Cancel</button>
+                      <button className="adv-save-btn" onClick={()=>saveAdv(f)} disabled={!form.amount}>Save ✓</button>
+                    </div>
+                  </div>
+                )}
+
+                {entries.length>0&&(
+                  <>
+                    <div className="divider"/>
+                    <div className="section-label">Auto-Adjust — {selectedYear}</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                      {MONTHS.map((m,i)=>{
+                        const used=advanceMap[f]?.[m]?.used||0;
+                        const pb=advanceMap[f]?.[m]?.poolBefore||0;
+                        if(pb===0&&used===0)return null;
+                        return (
+                          <div key={m} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:999,background:used>0?"var(--green-bg)":"var(--surface2)",border:`1px solid ${used>0?"#10b98130":"var(--border)"}`,fontSize:"0.7rem",fontFamily:"'JetBrains Mono',monospace"}}>
+                            <span style={{color:"var(--text3)",fontFamily:"'Syne',sans-serif",fontWeight:600}}>{MONTHS_SHORT[i]}</span>
+                            {used>0?<span style={{color:"var(--green)",fontWeight:600}}>−₹{used.toLocaleString("en-IN")}</span>:<span style={{color:"var(--text3)"}}>—</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </>
+      )}
+
+      {/* ── MEMBERS TAB ── */}
+      {activeTab==="members"&&(
+        <div className="card">
+          <div className="card-header">
+            <div className="card-title"><div className="card-title-icon">👥</div>Manage Roommates</div>
+            <div className="info-pill">{friends.length} members</div>
+          </div>
+          <p style={{fontSize:"0.78rem",color:"var(--text3)",marginBottom:16,lineHeight:1.5}}>
+            ✏️ Naam edit · ➕ Naya add · 🗑️ Remove — saara data update ho jaata hai
+          </p>
+          {friends.map((f,idx)=>{
+            const c=gc(idx);
+            const isEditing=editingFriend?.index===idx;
+            const advCount=advanceLog.filter(e=>e.friend===f).length;
+            return (
+              <div className="friend-row" key={f} style={{borderColor:isEditing?"var(--accent-border)":""}}>
+                <div className="color-dot" style={{background:c.color}}/>
+                {isEditing?(
+                  <>
+                    <input className="friend-edit-input" value={editingFriend.value}
+                      onChange={e=>setEditingFriend({...editingFriend,value:e.target.value})}
+                      onKeyDown={e=>{if(e.key==="Enter")saveEdit();if(e.key==="Escape")setEditingFriend(null);}}
+                      autoFocus/>
+                    <div className="row-actions">
+                      <button className="save-btn" onClick={saveEdit}>Save ✓</button>
+                      <button className="cancel-btn" onClick={()=>setEditingFriend(null)}>✕</button>
+                    </div>
+                  </>
+                ):(
+                  <>
+                    <div className="friend-row-name" style={{color:c.color}}>{f}</div>
+                    {advCount>0&&<div style={{fontSize:"0.65rem",color:"var(--green)",fontWeight:600,fontFamily:"'JetBrains Mono',monospace"}}>💰{advCount}</div>}
+                    <div className="row-actions">
+                      <button className="icon-btn" onClick={()=>setEditingFriend({index:idx,value:f})}>✏️</button>
+                      {friends.length>2&&<button className="icon-btn danger" onClick={()=>setDeleteConfirm(f)}>🗑️</button>}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+          {showAddForm?(
+            <div className="add-friend-form">
+              <input className="add-friend-input" placeholder="Naya roommate ka naam..." value={newFriendName}
+                onChange={e=>setNewFriendName(e.target.value)}
+                onKeyDown={e=>{if(e.key==="Enter")addFriend();if(e.key==="Escape"){setShowAddForm(false);setNewFriendName("");}}}
+                autoFocus/>
+              <button className="confirm-add-btn" onClick={addFriend} disabled={!newFriendName.trim()}>Add ✓</button>
+              <button className="cancel-btn" style={{padding:"10px 12px"}} onClick={()=>{setShowAddForm(false);setNewFriendName("");}}>✕</button>
+            </div>
+          ):(
+            <button className="add-friend-btn" onClick={()=>setShowAddForm(true)}>＋ Naya Roommate Add Karo</button>
+          )}
+        </div>
+      )}
+
+      {/* DELETE MODAL */}
+      {deleteConfirm&&(
+        <div className="modal-overlay" onClick={()=>setDeleteConfirm(null)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-title">"{deleteConfirm}" ko remove karo?</div>
+            <div className="modal-sub">Iska saara data aur advance history bhi delete ho jayegi. Undo nahi hoga.</div>
+            <div className="modal-actions">
+              <button className="modal-cancel-btn" onClick={()=>setDeleteConfirm(null)}>Rehne Do</button>
+              <button className="modal-danger-btn" onClick={deleteFriend}>Haan, Remove</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {notif&&<div className={`notif notif-${notif.type}`}>{notif.msg}</div>}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+
+</body>
+</html>
